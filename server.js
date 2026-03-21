@@ -3,11 +3,7 @@ const app = express();
 app.use(express.json());
 
 app.post("/generate", async (req, res) => {
-  const { prompt, mode } = req.body;
-
-  const systemPrompt = mode === "script"
-    ? "You are a Roblox Luau scripting expert. Write clean, working Roblox scripts. Output ONLY the script code, no explanation, no markdown."
-    : "You are a Roblox Studio build assistant. Give clear, step-by-step build instructions using Roblox part properties. Be specific and concise.";
+  const { systemPrompt, messages } = req.body;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -18,14 +14,19 @@ app.post("/generate", async (req, res) => {
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }]
+      max_tokens: 2048,
+      system: systemPrompt || "You are a helpful Roblox developer assistant.",
+      messages: messages || []
     })
   });
 
   const data = await response.json();
-  res.json({ result: data.content[0].text });
+
+  if (data.content && data.content[0]) {
+    res.json({ result: data.content[0].text });
+  } else {
+    res.status(500).json({ error: "No response from AI", raw: data });
+  }
 });
 
 app.listen(process.env.PORT || 3000);
