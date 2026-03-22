@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
 
 app.post("/generate", async (req, res) => {
   try {
@@ -29,8 +29,8 @@ app.post("/generate", async (req, res) => {
       },
       contents: geminiContents,
       generationConfig: {
-        maxOutputTokens: 8192,  // raised — never cuts off mid-script
-        temperature: 0.1,       // lower = more precise code
+        maxOutputTokens: 8192,
+        temperature: 0.1,
       }
     };
 
@@ -41,8 +41,8 @@ app.post("/generate", async (req, res) => {
     });
 
     const data = await response.json();
-
     console.log("Gemini status:", response.status);
+    console.log("Gemini preview:", JSON.stringify(data).slice(0, 200));
 
     if (response.status === 200 && data.candidates && data.candidates[0]) {
       const text = data.candidates[0].content.parts[0].text;
@@ -60,7 +60,7 @@ app.post("/generate", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.json({ status: "AI Builder running!", apiKeySet: !!process.env.GEMINI_API_KEY });
+  res.json({ status: "AI Builder running — Gemini 2.5 Pro!", apiKeySet: !!process.env.GEMINI_API_KEY });
 });
 
 app.listen(process.env.PORT || 3000, () => {
