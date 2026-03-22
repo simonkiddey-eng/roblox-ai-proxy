@@ -29,7 +29,7 @@ app.post("/generate", async (req, res) => {
       },
       contents: geminiContents,
       generationConfig: {
-        maxOutputTokens: 10000,  // raised — never cuts off mid-script
+        maxOutputTokens: 8192,  // raised — never cuts off mid-script
         temperature: 0.1,       // lower = more precise code
       }
     };
