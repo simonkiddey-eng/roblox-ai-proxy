@@ -9,17 +9,15 @@ app.post("/generate", async (req, res) => {
     const { systemPrompt, messages } = req.body;
 
     console.log("Request received, messages:", messages ? messages.length : 0);
-    console.log("API Key set:", !!process.env.GEMINI_API_KEY);
 
     if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not set in Railway environment variables!" });
+      return res.status(500).json({ error: "GEMINI_API_KEY is not set!" });
     }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "Missing or empty messages array" });
+      return res.status(400).json({ error: "Missing messages" });
     }
 
-    // Convert to Gemini format
     const geminiContents = messages.map(msg => ({
       role: msg.role === "assistant" ? "model" : "user",
       parts: [{ text: msg.content }]
@@ -31,12 +29,10 @@ app.post("/generate", async (req, res) => {
       },
       contents: geminiContents,
       generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.7,
+        maxOutputTokens: 10000,  // raised — never cuts off mid-script
+        temperature: 0.1,       // lower = more precise code
       }
     };
-
-    console.log("Calling Gemini 2.5 Flash (free tier)...");
 
     const response = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
       method: "POST",
@@ -46,35 +42,27 @@ app.post("/generate", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("Gemini HTTP status:", response.status);
-    console.log("Gemini response preview:", JSON.stringify(data).slice(0, 400));
+    console.log("Gemini status:", response.status);
 
     if (response.status === 200 && data.candidates && data.candidates[0]) {
       const text = data.candidates[0].content.parts[0].text;
       return res.json({ result: text });
     } else if (data.error) {
-      console.error("Gemini error:", data.error);
       return res.status(500).json({ error: "Gemini error: " + (data.error.message || JSON.stringify(data.error)) });
     } else {
-      return res.status(500).json({ error: "Unexpected response: " + JSON.stringify(data).slice(0, 300) });
+      return res.status(500).json({ error: "Unexpected: " + JSON.stringify(data).slice(0, 300) });
     }
 
   } catch (err) {
-    console.error("Server crash:", err.message);
+    console.error("Crash:", err.message);
     return res.status(500).json({ error: "Server crashed: " + err.message });
   }
 });
 
-// Health check
 app.get("/", (req, res) => {
-  res.json({
-    status: "AI Builder proxy running — Gemini 2.5 Flash (free tier)!",
-    apiKeySet: !!process.env.GEMINI_API_KEY,
-    time: new Date().toISOString()
-  });
+  res.json({ status: "AI Builder running!", apiKeySet: !!process.env.GEMINI_API_KEY });
 });
 
 app.listen(process.env.PORT || 3000, () => {
-  console.log("Server started on port", process.env.PORT || 3000);
-  console.log("Gemini API Key set:", !!process.env.GEMINI_API_KEY);
+  console.log("Server started, key set:", !!process.env.GEMINI_API_KEY);
 });
