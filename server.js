@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 app.post("/generate", async (req, res) => {
   try {
@@ -36,7 +36,7 @@ app.post("/generate", async (req, res) => {
       }
     };
 
-    console.log("Calling Gemini 2.0 Flash...");
+    console.log("Calling Gemini 2.5 Flash (free tier)...");
 
     const response = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
       method: "POST",
@@ -68,7 +68,7 @@ app.post("/generate", async (req, res) => {
 // Health check
 app.get("/", (req, res) => {
   res.json({
-    status: "AI Builder proxy is running with Gemini 2.0 Flash!",
+    status: "AI Builder proxy running — Gemini 2.5 Flash (free tier)!",
     apiKeySet: !!process.env.GEMINI_API_KEY,
     time: new Date().toISOString()
   });
